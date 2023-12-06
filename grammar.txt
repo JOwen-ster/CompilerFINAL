@@ -1,0 +1,253 @@
+// Stage 0 : Base grammar
+<prog>       -> program <identifier>; var <dec-list> begin <stat-list> end.
+<identifier> -> <letter>{<letter>|<digit>} // EBNF
+<dec-list>   -> <dec>:<type>;
+<dec>        -> <identifiier>,<dec>|<identifier>
+<type>       -> integer
+<stat-list>  -> <stat>|<stat><stat-list>
+<stat>       -> <write>|<assign>
+<write>      -> write(<str><identifier>);
+<str>        -> "value=",|LAMBDA
+<assign>     -> <identifier>=<expr>;
+<expr>       -> <expr>+<term>|<expr>-<term>|<term>
+<term>       -> <term>*<factor>|<term>/<factor>|<factor>
+<factor>     -> <identifier>|<number>|(<expr>)
+<number>     -> <sign><digit>{<digit>} // EBNF
+<sign>       -> +|-|LAMBDA
+<digit>      -> 0|1|2|3|4|5|6|7|8|9
+<letter>     -> a|b|c|d|w|f
+
+// Stage 1 : Conversion to letters
+S -> program A; var B begin E end.
+A -> P{P|O} // EBNF
+B -> C:D;
+C -> A,C|A
+D -> integer
+E -> F|FE
+F -> G|I
+G -> write(HA);
+H -> "value=",|LAMBDA
+I -> A=J;
+J -> J+K|J-K|K
+K -> K*L|K/L|L
+L -> A|M|(J)
+M -> NO{O} // EBNF
+N -> +|-|LAMBDA
+O -> 0|1|2|3|4|5|6|7|8|9
+P -> a|b|c|d|w|f
+
+// Stage 2 : Removing EBNF
+A  -> PA'
+A' -> PA'
+A' -> OA'
+A' -> LAMBDA
+M  -> NM'
+M' -> OM'
+M' -> LAMBDA
+
+// Stage 3: Original grammar in BNF
+<prog>            -> program <identifier>; var <dec-list> begin <stat-list> end.
+<identifier>      -> <letter><post-identifier>
+<post-identifier> -> <letter><post-identifier>
+<post-identifier> -> <digit><post-identifier>
+<post-identifier> -> LAMBDA
+<dec-list>        -> <dec>:<type>;
+<dec>             -> <identifiier>,<dec>
+<dec>             -> <identifiier>
+<type>            -> integer
+<stat-list>       -> <stat>
+<stat-list>       -> <stat><stat-list>
+<stat>            -> <write>
+<stat>            -> <assign>
+<write>           -> write(<str><identifier>);
+<str>             -> "value=",
+<str>             -> LAMBDA
+<assign>          -> <identifier>=<expr>;
+<expr>            -> <expr>+<term>
+<expr>            -> <expr>-<term>
+<expr>            -> <term>
+<term>            -> <term>*<factor>
+<term>            -> <term>/<factor>
+<term>            -> <factor>
+<factor>          -> <identifier>
+<factor>          -> <number>
+<factor>          -> (<expr>)
+<number>          -> <sign><post-number>
+<post-number>     -> <digit><post-number>
+<post-number>     -> LAMBDA
+<sign>            -> +
+<sign>            -> -
+<sign>            -> LAMBDA
+<digit>           -> 0
+<digit>           -> 1
+<digit>           -> 2
+<digit>           -> 3
+<digit>           -> 4
+<digit>           -> 5
+<digit>           -> 6
+<digit>           -> 7
+<digit>           -> 8
+<digit>           -> 9
+<letter>          -> a
+<letter>          -> b
+<letter>          -> c
+<letter>          -> d
+<letter>          -> w
+<letter>          -> f
+
+// Stage 4: Removing Left Recursion
+
+I  -> A=J;
+I  -> 
+
+J  -> J+K|J-K|K
+J  -> KJ'
+J' -> +KJ'
+J' -> -KJ'
+J' -> LAMBDA
+
+K  -> K*L|K/L|L
+K  -> LK'
+K' -> *LK'
+K' -> /LK'
+K' -> LAMBDA
+
+A' = Q
+J' = T
+K' = R
+M' = U
+
+S -> program A; var B begin E end.
+A -> PQ
+Q -> PQ
+Q -> OQ
+Q -> LAMBDA   
+B -> C:D;
+C -> A,C
+C -> A
+D -> integer
+E -> F
+E -> FE
+F -> G
+F -> I
+G -> write(HA);
+H -> "value=",
+H -> LAMBDA
+I -> A=J;
+J -> KT
+T -> +KT
+T -> -KT
+T -> LAMBDA
+K -> LR
+R -> *LR
+R -> /LR
+R -> LAMBDA
+L -> A
+L -> M
+L -> (J)
+M -> NU
+U -> OU
+U -> LAMBDA
+N -> +
+N -> -
+N -> LAMBDA
+O -> 0
+O -> 1
+O -> 2
+O -> 3
+O -> 4
+O -> 5
+O -> 6
+O -> 7
+O -> 8
+O -> 9
+P -> a
+P -> b
+P -> c
+P -> d
+P -> w
+P -> f
+
+// Stage 5: Beginning Predictive Parsing
+
+Non - terminals                    FIRST                                     FOLLOWS
+S | <prog>            | program                           | $
+A | <identifier>      | a b c d w f                       | ; , : ) = * / + -
+Q | <post-identifier> | a b c d w f 0 1 2 3 4 5 6 7 8 9   | ; , : ) = * / + -
+B | <dec-list>        | a b c d w f                       | begin
+C | <dec>             | a b c d w f                       | : 
+D | <type>            | integer                           | ;
+E | <stat-list>       | write a b c d w f                 | end.
+F | <stat>            | write a b c d w f                 | end. write a b c d w f
+G | <write>           | write                             | end. write a b c d w f
+H | <str>             | "value=", LAMBDA                  | a b c d w f
+I | <assign>          | a b c d w f                       | end. write a b c d w f
+J | <expr>            | a b c d w f + - LAMBDA (          | ; )
+T | <post-expr>       | + - LAMBDA                        | ; )
+K | <term>            | a b c d w f + - LAMBDA (          | + - ; )
+R | <post-term>       | * / LAMBDA                        | + - ; )
+L | <factor>          | a b c d w f + - LAMBDA (          | * / + - ; )
+M | <number>          | + - LAMBDA 0 1 2 3 4 5 6 7 8 9    | * / + - ; )
+U | <post-number>     | 0 1 2 3 4 5 6 7 8 9 LAMBDA        | * / + - ; )
+N | <sign>            | + - LAMBDA                        | 0 1 2 3 4 5 6 7 8 9 * / + - ; )
+O | <digit>           | 0 1 2 3 4 5 6 7 8 9               | a b c d w f 0 1 2 3 4 5 6 7 8 9 ; , : ) = * / + -
+P | <letter>          | a b c d w f                       | a b c d w f 0 1 2 3 4 5 6 7 8 9 ; , : ) = * / + -
+
+// Stage 6: Parsing Table
+
+S -> program A; var B begin E end. | first(this) = {program}
+A -> PQ                            | first(PQ) = first(P) = {a b c d w f}
+Q -> PQ                            | first(PQ) = first(P) = {a b c d w f}
+Q -> OQ                            | first(OQ) = first(O) = {0 1 2 3 4 5 6 7 8 9}
+Q -> LAMBDA                        | follow(Q) = {; , : ) = * / + -}
+B -> C:D;                          | first(C:D;) = first (C) = {a b c d w f}
+C -> A                             | first(A) = {a b c d w f}
+D -> integer                       | {integer}
+E -> F                             | first(F) = {write a b c d w f}
+F -> G                             | first(G) = {write}
+F -> I                             | first(I) = {a b c d w f}
+G -> write(HA);                    | first(this) = {write}
+H -> "value=",                     | first(this) = {"value=",}
+H -> LAMBDA                        | follow(H) = {a b c d w f}
+I -> A=J;                          | first(A=J;) = first(A) = {a b c d w f}
+J -> KT                            | first(KT) = first(K) = {a b c d w f + - LAMBDA (}
+T -> +KT                           | first(+KT) = {+}
+T -> -KT                           | first(-KT) = {-}
+T -> LAMBDA                        | follow(T) = {; )}
+K -> LR                            | first(LR) = first(L) = {a b c d w f + - LAMBDA (}
+R -> *LR                           | first(*LR) = {*}
+R -> /LR                           | first(/LR) = {/}
+R -> LAMBDA                        | follow(R) = {+ - ; )}
+L -> A                             | first(A) = {a b c d w f}
+L -> M                             | first(M) = {+ - LAMBDA 0 1 2 3 4 5 6 7 8 9}
+L -> (J)                           | first((J)) = {(}
+M -> NU                            | first(NU) = first(N) = {+ - LAMBDA}
+U -> OU                            | first(OU) = first(O) = {0 1 2 3 4 5 6 7 8 9}
+U -> LAMBDA                        | follow(U) = {* / + - ; )}
+N -> +                             | {+}
+N -> -                             | {-}
+N -> LAMBDA                        | follow(N) = {0 1 2 3 4 5 6 7 8 9 * / + - ; )}
+O -> 0                             | {0}
+O -> 1                             | {1}
+O -> 2                             | {2}
+O -> 3                             | {3}
+O -> 4                             | {4}
+O -> 5                             | {5}
+O -> 6                             | {6}
+O -> 7                             | {7}
+O -> 8                             | {8}
+O -> 9                             | {9}
+P -> a                             | {a}
+P -> b                             | {b}
+P -> c                             | {c}
+P -> d                             | {d}
+P -> w                             | {w}
+P -> f                             | {f}
+
+// Link to parsing table:
+https://docs.google.com/spreadsheets/d/1ZqQA24DjDgnqYTa9zETsPoquGZC8krAB8Vg6s30AD7g/edit?usp=sharing
+
+// Comments (for me, Kevin Tran, specifically)
+- Compiler will start with program; if there is no program, the compiler will throw an error.
+- A EBNF demonstrate that you can have as many letters and digits after the first letter. M EBNF demonstrates that you need a sign and then as many digits as you want
+- str just takes the entire quotation thing into a string, hence "value="
