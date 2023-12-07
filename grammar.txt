@@ -97,9 +97,6 @@ M' -> LAMBDA
 
 // Stage 4: Removing Left Recursion
 
-I  -> A=J;
-I  -> 
-
 J  -> J+K|J-K|K
 J  -> KJ'
 J' -> +KJ'
@@ -171,27 +168,27 @@ P -> f
 // Stage 5: Beginning Predictive Parsing
 
 Non - terminals                    FIRST                                     FOLLOWS
-S | <prog>            | program                           | $
-A | <identifier>      | a b c d w f                       | ; , : ) = * / + -
-Q | <post-identifier> | a b c d w f 0 1 2 3 4 5 6 7 8 9   | ; , : ) = * / + -
-B | <dec-list>        | a b c d w f                       | begin
-C | <dec>             | a b c d w f                       | : 
-D | <type>            | integer                           | ;
-E | <stat-list>       | write a b c d w f                 | end.
-F | <stat>            | write a b c d w f                 | end. write a b c d w f
-G | <write>           | write                             | end. write a b c d w f
-H | <str>             | "value=", LAMBDA                  | a b c d w f
-I | <assign>          | a b c d w f                       | end. write a b c d w f
-J | <expr>            | a b c d w f + - LAMBDA (          | ; )
-T | <post-expr>       | + - LAMBDA                        | ; )
-K | <term>            | a b c d w f + - LAMBDA (          | + - ; )
-R | <post-term>       | * / LAMBDA                        | + - ; )
-L | <factor>          | a b c d w f + - LAMBDA (          | * / + - ; )
-M | <number>          | + - LAMBDA 0 1 2 3 4 5 6 7 8 9    | * / + - ; )
-U | <post-number>     | 0 1 2 3 4 5 6 7 8 9 LAMBDA        | * / + - ; )
-N | <sign>            | + - LAMBDA                        | 0 1 2 3 4 5 6 7 8 9 * / + - ; )
-O | <digit>           | 0 1 2 3 4 5 6 7 8 9               | a b c d w f 0 1 2 3 4 5 6 7 8 9 ; , : ) = * / + -
-P | <letter>          | a b c d w f                       | a b c d w f 0 1 2 3 4 5 6 7 8 9 ; , : ) = * / + -
+S | <prog>            | program                                          | $
+A | <identifier>      | a b c d w f                                      | ; , ) = * / + -
+Q | <post-identifier> | a b c d w f 0 1 2 3 4 5 6 7 8 9 LAMBDA           | ; , ) = * / + -         
+B | <dec-list>        | a b c d w f                                      | begin             
+C | <dec>             | a b c d w f                                      | :                 
+D | <type>            | integer                                          | ;                 
+E | <stat-list>       | write a b c d w f                                | end.              
+F | <stat>            | write a b c d w f                                | end. write a b c d w f
+G | <write>           | write                                            | end. write a b c d w f
+H | <str>             | "value=", LAMBDA                                 | a b c d w f
+I | <assign>          | a b c d w f                                      | end. write a b c d w f
+J | <expr>            | a b c d w f + - LAMBDA 0 1 2 3 4 5 6 7 8 9 ( * / | ; )               
+T | <post-expr>       | + - LAMBDA                                       | ; )
+K | <term>            | a b c d w f + - LAMBDA 0 1 2 3 4 5 6 7 8 9 ( * / | + - ; )
+R | <post-term>       | * / LAMBDA                                       | + - ; )
+L | <factor>          | a b c d w f + - LAMBDA 0 1 2 3 4 5 6 7 8 9 (     | * / + - ; )
+M | <number>          | + - LAMBDA 0 1 2 3 4 5 6 7 8 9                   | * / + - ; )
+U | <post-number>     | 0 1 2 3 4 5 6 7 8 9 LAMBDA                       | * / + - ; )
+N | <sign>            | + - LAMBDA                                       | 0 1 2 3 4 5 6 7 8 9 * / + - ; )
+O | <digit>           | 0 1 2 3 4 5 6 7 8 9                              | a b c d w f 0 1 2 3 4 5 6 7 8 9 ; , ) = * / + -
+P | <letter>          | a b c d w f                                      | a b c d w f 0 1 2 3 4 5 6 7 8 9 ; , ) = * / + -
 
 // Stage 6: Parsing Table
 
@@ -199,7 +196,7 @@ S -> program A; var B begin E end. | first(this) = {program}
 A -> PQ                            | first(PQ) = first(P) = {a b c d w f}
 Q -> PQ                            | first(PQ) = first(P) = {a b c d w f}
 Q -> OQ                            | first(OQ) = first(O) = {0 1 2 3 4 5 6 7 8 9}
-Q -> LAMBDA                        | follow(Q) = {; , : ) = * / + -}
+Q -> LAMBDA                        | follow(Q) = { ; , ) = * / + -}
 B -> C:D;                          | first(C:D;) = first (C) = {a b c d w f}
 C -> A                             | first(A) = {a b c d w f}
 D -> integer                       | {integer}
@@ -210,11 +207,11 @@ G -> write(HA);                    | first(this) = {write}
 H -> "value=",                     | first(this) = {"value=",}
 H -> LAMBDA                        | follow(H) = {a b c d w f}
 I -> A=J;                          | first(A=J;) = first(A) = {a b c d w f}
-J -> KT                            | first(KT) = first(K) = {a b c d w f + - LAMBDA (}
+J -> KT                            | first(KT) = first(K) = {a b c d w f + - LAMBDA 0 1 2 3 4 5 6 7 8 9 ( * /}
 T -> +KT                           | first(+KT) = {+}
 T -> -KT                           | first(-KT) = {-}
 T -> LAMBDA                        | follow(T) = {; )}
-K -> LR                            | first(LR) = first(L) = {a b c d w f + - LAMBDA (}
+K -> LR                            | first(LR) = first(L) = {a b c d w f + - LAMBDA 0 1 2 3 4 5 6 7 8 9 (}
 R -> *LR                           | first(*LR) = {*}
 R -> /LR                           | first(/LR) = {/}
 R -> LAMBDA                        | follow(R) = {+ - ; )}
