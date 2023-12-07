@@ -157,14 +157,23 @@ def compiler(content):
     for unknown_identifier in unknown_identifiers:
         errors.append(f"Unknown identifier: {unknown_identifier}")
 
+    # Check for missing semicolons at the end of lines
+    lines = content.split('\n')
+    for line in lines:
+        line = line.strip()
+        if line and not line.endswith(';') and line not in ['var', 'begin', 'end.']:
+            errors.append(f"Missing semicolon at the end of line: {line}")
+
     if len(errors) == 0:
-        print("Accepted!")
+        print("Accepted")
     else:
-      print(errors)
+        print(errors)
+
+# Specify the path to your text file
+file_path = 'Final23.txt'
 
 # Read the content of the file
-file_path = 'Final23.txt'
-with open(file_path, 'r', encoding='utf-8') as file:
+with open(file_path, 'r') as file:
     file_content = file.read()
 
 # Call the function to check for errors

@@ -1,4 +1,5 @@
 import re
+
 def format_code(input_file, output_file):
     with open(input_file, 'r', encoding='utf-8') as file:
         content = file.read()
@@ -23,4 +24,10 @@ def format_code(input_file, output_file):
     with open(output_file, 'w') as file:
         file.write(content)
 
-format_code('Finalv1.txt', 'Final23.txt')
+if __name__ == "__main__":
+    input_file = 'Finalv1.txt'  # Replace with the actual file name
+    output_file = 'Final23.txt'  # Replace with the desired output file name
+
+    format_code(input_file, output_file)
+
+    print(f"Code formatted and saved to {output_file}")

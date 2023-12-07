@@ -41,7 +41,7 @@ def convert_to_python(input_file, output_file):
 
 
 # Example usage:
-input_file_path = 'Final23.txt'  # Replace with the actual file path
+input_file_path = 'Finalv1.txt'  # Replace with the actual file path
 output_file_path = 'part3.py'  # Replace with the desired output file path
 
 convert_to_python(input_file_path, output_file_path)
